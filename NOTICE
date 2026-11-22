@@ -1,0 +1,15 @@
+tobu
+Copyright 2026 hakobu GmbH
+
+This product includes software developed at hakobu GmbH (https://hakobu.de).
+Maintainer: David Müller, hakobu GmbH, david.mueller@hakobu.de
+
+Original work by hakobu GmbH (Apache-2.0) includes the agent server (server/), the tobu-fnx engine process and its
+command protocol (engine/tobu/), the paired IQ gate/up and IQ4_NL down prefill kernels and other changes marked "tobu"
+in upstream files, the reproducible build and state id (engine/cmake/), tobu bench (bench/), the installer and the
+scripts. THIRD_PARTY.md, section "Original work in tobu (hakobu GmbH)", lists everything file by file.
+
+This product includes software from the following MIT-licensed projects (see THIRD_PARTY.md and third_party/):
+- Gufo (https://github.com/gufo-org/gufo), Copyright (c) 2026 gufo contributors
+- flash-next-iq-gufo-extension (https://github.com/storm1er/flash-next-iq-gufo-extension), Copyright (c) 2026 gufo contributors
+- llama.cpp / ggml (https://github.com/ggml-org/llama.cpp), Copyright (c) 2023-2026 The ggml authors

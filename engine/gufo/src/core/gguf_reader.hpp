@@ -1,0 +1,296 @@
+// Parts from gufo (gufo-org/gufo v0.34.0 2845939b, MIT); see THIRD_PARTY.md. Changes: tobu.
+#ifndef GUFO_CORE_GGUF_READER_HPP_
+#define GUFO_CORE_GGUF_READER_HPP_
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <limits>
+#include <memory>
+#include <optional>
+#include <span>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <variant>
+#include <vector>
+
+#include "src/core/model_config.hpp"
+#include "src/core/platform/mapped_file.hpp"
+
+namespace gufo::core {
+
+/// GGML tensor types used by supported model artifacts.
+enum class GgmlType : std::uint16_t {
+  kF32 = 0,
+  kF16 = 1,
+  kQ4_0 = 2,
+  kQ4_1 = 3,
+  kQ5_0 = 6,
+  kQ5_1 = 7,
+  kQ8_0 = 8,
+  kQ8_1 = 9,
+  kQ2_K = 10,
+  kQ3_K = 11,
+  kQ4_K = 12,
+  kQ5_K = 13,
+  kQ6_K = 14,
+  kQ8_K = 15,
+  kIQ2_XXS = 16,
+  kIQ2_XS = 17,
+  kIQ3_XXS = 18,
+  kIQ1_S = 19,
+  kIQ4_NL = 20,
+  kIQ3_S = 21,
+  kIQ2_S = 22,
+  kIQ4_XS = 23,
+  kI32 = 26,
+  kIQ1_M = 29,
+  kBF16 = 30,
+};
+
+[[nodiscard]] constexpr std::string_view ToString(GgmlType type) noexcept {
+  switch (type) {
+    case GgmlType::kF32:
+      return "F32";
+    case GgmlType::kF16:
+      return "F16";
+    case GgmlType::kQ4_0:
+      return "Q4_0";
+    case GgmlType::kQ4_1:
+      return "Q4_1";
+    case GgmlType::kQ5_0:
+      return "Q5_0";
+    case GgmlType::kQ5_1:
+      return "Q5_1";
+    case GgmlType::kQ8_0:
+      return "Q8_0";
+    case GgmlType::kQ8_1:
+      return "Q8_1";
+    case GgmlType::kQ2_K:
+      return "Q2_K";
+    case GgmlType::kQ3_K:
+      return "Q3_K";
+    case GgmlType::kQ4_K:
+      return "Q4_K";
+    case GgmlType::kQ5_K:
+      return "Q5_K";
+    case GgmlType::kQ6_K:
+      return "Q6_K";
+    case GgmlType::kQ8_K:
+      return "Q8_K";
+    case GgmlType::kIQ2_XXS:
+      return "IQ2_XXS";
+    case GgmlType::kIQ2_XS:
+      return "IQ2_XS";
+    case GgmlType::kIQ3_XXS:
+      return "IQ3_XXS";
+    case GgmlType::kIQ1_S:
+      return "IQ1_S";
+    case GgmlType::kIQ4_NL:
+      return "IQ4_NL";
+    case GgmlType::kIQ3_S:
+      return "IQ3_S";
+    case GgmlType::kIQ2_S:
+      return "IQ2_S";
+    case GgmlType::kIQ4_XS:
+      return "IQ4_XS";
+    case GgmlType::kI32:
+      return "I32";
+    case GgmlType::kIQ1_M:
+      return "IQ1_M";
+    case GgmlType::kBF16:
+      return "BF16";
+  }
+  return "UNKNOWN";
+}
+
+/// GGUF metadata value types as specified by the GGUF binary format.
+enum class GgufValueType : std::uint8_t {
+  kUint8 = 0,
+  kInt8 = 1,
+  kUint16 = 2,
+  kInt16 = 3,
+  kUint32 = 4,
+  kInt32 = 5,
+  kFloat32 = 6,
+  kBool = 7,
+  kString = 8,
+  kArray = 9,
+  kUint64 = 10,
+  kInt64 = 11,
+  kFloat64 = 12,
+};
+
+/// Metadata entry holding typed scalar, string, or array data.
+struct GgufMetadataValue {
+  GgufValueType type{GgufValueType::kUint32};
+  std::variant<std::uint64_t, std::int64_t, double, bool, std::string_view,
+               std::vector<std::string_view>, std::vector<std::uint64_t>,
+               std::vector<std::int64_t>, std::vector<double>>
+      value;
+};
+
+/// Metadata and memory pointer for a single tensor inside the GGUF container.
+struct GgufTensorInfo {
+  std::string_view name;
+  std::vector<std::uint64_t> dimensions;
+  GgmlType type{GgmlType::kF16};
+  std::uint64_t offset{0};
+  const void* data{nullptr};
+  std::size_t size_bytes{0};
+  /// False when core cannot size this storage type or shape (a reader opened
+  /// with `GgufOpenOptions::allow_unsized_tensors`). `size_bytes` then spans
+  /// the bytes the file reserves for the tensor: up to the next tensor's
+  /// offset, or to the end of the data.
+  bool sized{true};
+
+  [[nodiscard]] std::uint64_t ElementCount() const noexcept {
+    if (dimensions.empty()) {
+      return 0;
+    }
+    std::uint64_t count = 1;
+    for (const auto dimension : dimensions) {
+      if (dimension == 0 ||
+          count > std::numeric_limits<std::uint64_t>::max() / dimension) {
+        return 0;
+      }
+      count *= dimension;
+    }
+    return count;
+  }
+};
+
+/// One contiguous mapped GGUF file region. Split models expose one region per
+/// shard while single-file and in-memory readers expose exactly one.
+struct GgufMappedRegion {
+  const void* data{nullptr};
+  std::size_t size{0};
+  /// Borrowed platform handle of the mapping, valid for the reader lifetime;
+  /// invalid for memory images. Weight-upload readers duplicate or reopen it
+  /// instead of resolving `source_path` again.
+  platform::PlatformFile file_descriptor{platform::kInvalidFile};
+  std::filesystem::path source_path{};
+};
+
+struct GgufOpenOptions {
+  /// Accept tensors whose storage type or shape core cannot size, such as an
+  /// extension's own quantization, instead of rejecting the file. Only
+  /// callers that select a provider by `GgufTensorInfo::sized` set this.
+  bool allow_unsized_tensors{false};
+};
+
+/// Zero-copy, lightweight GGUF binary reader and tensor indexer.
+class GgufReader {
+public:
+  ~GgufReader();
+
+  GgufReader(const GgufReader&) = delete;
+  GgufReader& operator=(const GgufReader&) = delete;
+  GgufReader(GgufReader&& other) noexcept;
+  GgufReader& operator=(GgufReader&& other) noexcept;
+
+  /// Memory-maps a .gguf file from disk and parses metadata and tensor headers.
+  [[nodiscard]] static std::unique_ptr<GgufReader> OpenFile(
+      const std::filesystem::path& path, std::string* error_msg = nullptr,
+      GgufOpenOptions options = {});
+
+  /// Parses a GGUF file from an existing in-memory buffer without file mapping.
+  [[nodiscard]] static std::unique_ptr<GgufReader> OpenMemory(
+      const void* data, std::size_t size, std::string* error_msg = nullptr,
+      GgufOpenOptions options = {});
+
+  [[nodiscard]] std::uint32_t GetVersion() const noexcept { return version_; }
+  [[nodiscard]] std::uint64_t GetTensorCount() const noexcept {
+    return tensors_.size();
+  }
+  [[nodiscard]] std::uint64_t GetMetadataCount() const noexcept {
+    return metadata_.size();
+  }
+  [[nodiscard]] std::uint64_t GetAlignment() const noexcept {
+    return alignment_;
+  }
+  /// Returns the contiguous backing pointer for single-file readers only.
+  [[nodiscard]] const void* GetData() const noexcept { return data_; }
+  [[nodiscard]] std::size_t GetSize() const noexcept { return size_; }
+  [[nodiscard]] std::span<const GgufMappedRegion> GetMappedRegions()
+      const noexcept {
+    return mapped_regions_;
+  }
+
+  /// Metadata lookup helpers
+  [[nodiscard]] const GgufMetadataValue* FindMetadata(
+      std::string_view key) const noexcept;
+  [[nodiscard]] std::optional<std::string_view> GetMetadataString(
+      std::string_view key) const noexcept;
+  [[nodiscard]] std::optional<std::uint32_t> GetMetadataUint32(
+      std::string_view key) const noexcept;
+  [[nodiscard]] std::optional<std::uint64_t> GetMetadataUint64(
+      std::string_view key) const noexcept;
+  [[nodiscard]] std::optional<float> GetMetadataFloat32(
+      std::string_view key) const noexcept;
+  [[nodiscard]] std::optional<bool> GetMetadataBool(
+      std::string_view key) const noexcept;
+  [[nodiscard]] std::vector<std::string_view> GetMetadataStringArray(
+      std::string_view key) const;
+  /// Tensor lookup helpers
+  [[nodiscard]] const GgufTensorInfo* FindTensor(
+      std::string_view name) const noexcept;
+  [[nodiscard]] bool HasTensor(std::string_view name) const noexcept;
+  [[nodiscard]] std::span<const GgufTensorInfo> GetTensors() const noexcept {
+    return tensors_;
+  }
+  /// The first tensor core cannot size, or null when every tensor is sized.
+  /// Inline: the extension runtime probes with it without the reader library.
+  [[nodiscard]] const GgufTensorInfo* FirstUnsizedTensor() const noexcept {
+    const auto found =
+        std::ranges::find(tensors_, false, &GgufTensorInfo::sized);
+    return found == tensors_.end() ? nullptr : &*found;
+  }
+  /// The error a reader opened without `allow_unsized_tensors` reports for
+  /// this file, or empty when every tensor is sized.
+  [[nodiscard]] std::string UnsizedTensorError() const;
+
+  /// Names the weight format this file was produced in, for benchmark and
+  /// diagnostic output. Prefers the `general.file_type` the quantizer recorded
+  /// (llama.cpp's ftype, so the label matches `llama-bench` on the same
+  /// artifact) and otherwise falls back to whichever tensor type holds the most
+  /// bytes. Never empty.
+  [[nodiscard]] std::string GetQuantizationLabel() const;
+
+  /// Inspects presence of MTP speculative tensors
+  [[nodiscard]] bool HasMtpTensors() const noexcept;
+
+  /// Inspects presence of vision encoder tensors
+  [[nodiscard]] bool HasVisionTensors() const noexcept;
+
+private:
+  GgufReader() = default;
+
+  [[nodiscard]] static std::unique_ptr<GgufReader> OpenSingleFile(
+      const std::filesystem::path& path, std::string* error_msg,
+      GgufOpenOptions options);
+  [[nodiscard]] static std::unique_ptr<GgufReader> OpenSplitFileSet(
+      const std::filesystem::path& path, std::unique_ptr<GgufReader> first,
+      std::string* error_msg, GgufOpenOptions options);
+
+  bool ParseHeaders(std::string* error_msg, GgufOpenOptions options = {});
+
+  const std::uint8_t* data_{nullptr};
+  std::size_t size_{0};
+  std::filesystem::path source_path_;
+  platform::ReadOnlyMappedFile mapping_;
+
+  std::uint32_t version_{0};
+  std::uint64_t alignment_{32};
+  std::unordered_map<std::string_view, GgufMetadataValue> metadata_;
+  std::vector<GgufTensorInfo> tensors_;
+  std::unordered_map<std::string_view, std::size_t> tensor_index_;
+  std::vector<GgufMappedRegion> mapped_regions_;
+  std::vector<std::unique_ptr<GgufReader>> shards_;
+};
+
+}  // namespace gufo::core
+
+#endif  // GUFO_CORE_GGUF_READER_HPP_

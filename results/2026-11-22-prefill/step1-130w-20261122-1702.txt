@@ -1,0 +1,32 @@
+en-code       warm prefill 311 tok/s ttft 0.177 s decode 76.34 tok/s  sclk 2551 (1535-2854) MHz  power 108.2 W (max 122.2)  7a86fbfcae5ed210
+en-code       meas prefill 325 tok/s ttft 0.169 s decode 78.04 tok/s  sclk 2857 (2747-2896) MHz  power 123.0 W (max 127.2)  7a86fbfcae5ed210
+en-code       meas prefill 335 tok/s ttft 0.164 s decode 78.07 tok/s  sclk 2883 (2845-2898) MHz  power 124.0 W (max 127.6)  7a86fbfcae5ed210
+en-code       meas prefill 329 tok/s ttft 0.167 s decode 79.03 tok/s  sclk 2873 (2810-2897) MHz  power 122.9 W (max 126.1)  7a86fbfcae5ed210
+en-code       meas prefill 318 tok/s ttft 0.173 s decode 79.07 tok/s  sclk 2875 (2820-2897) MHz  power 123.5 W (max 127.2)  7a86fbfcae5ed210
+json-extract  warm prefill 345 tok/s ttft 0.206 s decode 84.6 tok/s  sclk 2839 (2823-2851) MHz  power 123.0 W (max 124.7)  3b5054ac44589c6a
+json-extract  meas prefill 374 tok/s ttft 0.19 s decode 87.16 tok/s  sclk 2800 (2779-2826) MHz  power 123.1 W (max 124.8)  3b5054ac44589c6a
+json-extract  meas prefill 368 tok/s ttft 0.193 s decode 87.5 tok/s  sclk 2790 (2766-2817) MHz  power 123.5 W (max 125.7)  3b5054ac44589c6a
+json-extract  meas prefill 370 tok/s ttft 0.192 s decode 87.09 tok/s  sclk 2807 (2788-2830) MHz  power 125.3 W (max 127.0)  3b5054ac44589c6a
+json-extract  meas prefill 378 tok/s ttft 0.188 s decode 87.76 tok/s  sclk 2815 (2800-2836) MHz  power 126.1 W (max 127.2)  3b5054ac44589c6a
+de-prosa      warm prefill 266 tok/s ttft 0.169 s decode 43.88 tok/s  sclk 2887 (2773-2900) MHz  power 105.0 W (max 124.0)  7299dbee794ca733
+de-prosa      meas prefill 285 tok/s ttft 0.158 s decode 44.12 tok/s  sclk 2895 (2859-2900) MHz  power 103.4 W (max 107.6)  7299dbee794ca733
+de-prosa      meas prefill 281 tok/s ttft 0.16 s decode 43.96 tok/s  sclk 2894 (2847-2900) MHz  power 103.5 W (max 106.8)  7299dbee794ca733
+de-prosa      meas prefill 285 tok/s ttft 0.158 s decode 43.79 tok/s  sclk 2893 (2833-2900) MHz  power 102.7 W (max 105.4)  7299dbee794ca733
+de-prosa      meas prefill 269 tok/s ttft 0.167 s decode 43.91 tok/s  sclk 2888 (2793-2900) MHz  power 104.2 W (max 108.6)  7299dbee794ca733
+ctx-8k        warm prefill 1850 tok/s ttft 4.706 s decode 48.17 tok/s  sclk 2772 (2478-2897) MHz  power 126.9 W (max 152.9)  36c10ec667f4276a
+ctx-8k        meas prefill 1911 tok/s ttft 4.554 s decode 48.34 tok/s  sclk 2793 (2701-2896) MHz  power 129.5 W (max 152.8)  36c10ec667f4276a
+ctx-8k        meas prefill 1908 tok/s ttft 4.561 s decode 47.94 tok/s  sclk 2781 (2654-2896) MHz  power 129.5 W (max 152.5)  36c10ec667f4276a
+ctx-8k        meas prefill 1908 tok/s ttft 4.561 s decode 47.95 tok/s  sclk 2787 (2702-2894) MHz  power 130.4 W (max 151.9)  36c10ec667f4276a
+ctx-8k        meas prefill 1899 tok/s ttft 4.584 s decode 48.55 tok/s  sclk 2798 (2707-2898) MHz  power 130.1 W (max 151.8)  36c10ec667f4276a
+ctx-32k       warm prefill 1832 tok/s ttft 19.794 s decode 48.88 tok/s  sclk 2686 (2475-2897) MHz  power 135.6 W (max 150.1)  084a049545951ae3
+ctx-32k       meas prefill 1841 tok/s ttft 19.692 s decode 48.94 tok/s  sclk 2688 (2617-2897) MHz  power 136.1 W (max 148.3)  084a049545951ae3
+ctx-32k       meas prefill 1821 tok/s ttft 19.904 s decode 49.39 tok/s  sclk 2658 (2535-2897) MHz  power 131.7 W (max 147.7)  084a049545951ae3
+ctx-32k       meas prefill 1777 tok/s ttft 20.398 s decode 49.53 tok/s  sclk 2593 (2502-2896) MHz  power 120.7 W (max 126.3)  084a049545951ae3
+ctx-32k       meas prefill 1766 tok/s ttft 20.53 s decode 46.98 tok/s  sclk 2576 (2405-2894) MHz  power 119.3 W (max 124.2)  084a049545951ae3
+
+summary (median of measured runs)
+en-code       prompt     55  prefill 327 tok/s  ttft 0.17 s  decode 78.5 tok/s  sclk 2874 MHz  power 123.2 W (max 127.6)  sha ['7a86fbfcae5ed210']
+json-extract  prompt     71  prefill 372 tok/s  ttft 0.19 s  decode 87.3 tok/s  sclk 2804 MHz  power 124.4 W (max 127.2)  sha ['3b5054ac44589c6a']
+de-prosa      prompt     45  prefill 283 tok/s  ttft 0.16 s  decode 43.9 tok/s  sclk 2894 MHz  power 103.5 W (max 108.6)  sha ['7299dbee794ca733']
+ctx-8k        prompt   8704  prefill 1908 tok/s  ttft 4.56 s  decode 48.1 tok/s  sclk 2790 MHz  power 129.8 W (max 152.8)  sha ['36c10ec667f4276a']
+ctx-32k       prompt  36253  prefill 1799 tok/s  ttft 20.15 s  decode 49.2 tok/s  sclk 2626 MHz  power 126.2 W (max 148.3)  sha ['084a049545951ae3']

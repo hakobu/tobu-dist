@@ -1,0 +1,4 @@
+numpy
+tokenizers
+jinja2
+pillow   # images (vision tower); optional

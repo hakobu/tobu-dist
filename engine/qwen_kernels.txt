@@ -1,0 +1,4 @@
+qwen/kernels/sample.hip
+qwen/vision/encoder.hip
+qwen/vision/device_input.hip
+qwen/kernels/hipblaslt_gemm.hip

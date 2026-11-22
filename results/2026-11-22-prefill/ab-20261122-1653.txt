@@ -1,0 +1,26 @@
+ctx-8k   ON  warm prefill 1737 tok/s  sclk 2472 (1087-2802) MHz  93.8 W  36c10ec667f4276a
+ctx-8k   ON  meas prefill 1649 tok/s  sclk 2338 (2264-2546) MHz  84.9 W  36c10ec667f4276a
+ctx-8k   OFF meas prefill 1541 tok/s  sclk 2296 (2248-2428) MHz  85.0 W  36c10ec667f4276a
+ctx-8k   OFF meas prefill 1538 tok/s  sclk 2291 (2249-2384) MHz  85.0 W  36c10ec667f4276a
+ctx-8k   ON  meas prefill 1600 tok/s  sclk 2250 (1990-2380) MHz  83.8 W  36c10ec667f4276a
+ctx-8k   ON  meas prefill 1641 tok/s  sclk 2292 (2249-2379) MHz  85.5 W  36c10ec667f4276a
+ctx-8k   OFF meas prefill 1532 tok/s  sclk 2233 (1939-2353) MHz  83.5 W  36c10ec667f4276a
+ctx-8k   OFF meas prefill 1534 tok/s  sclk 2254 (2072-2330) MHz  85.2 W  36c10ec667f4276a
+ctx-8k   ON  meas prefill 1637 tok/s  sclk 2238 (2037-2311) MHz  84.6 W  36c10ec667f4276a
+ctx-32k  ON  warm prefill 1586 tok/s  sclk 2287 (1950-2673) MHz  84.9 W  084a049545951ae3
+ctx-32k  ON  meas prefill 1597 tok/s  sclk 2243 (2068-2517) MHz  84.9 W  084a049545951ae3
+ctx-32k  OFF meas prefill 1495 tok/s  sclk 2230 (2095-2330) MHz  85.0 W  084a049545951ae3
+ctx-32k  OFF meas prefill 1493 tok/s  sclk 2227 (2146-2329) MHz  84.9 W  084a049545951ae3
+ctx-32k  ON  meas prefill 1578 tok/s  sclk 2224 (1972-2353) MHz  84.9 W  084a049545951ae3
+ctx-32k  ON  meas prefill 1592 tok/s  sclk 2229 (2135-2353) MHz  85.0 W  084a049545951ae3
+ctx-32k  OFF meas prefill 1490 tok/s  sclk 2222 (2134-2318) MHz  85.0 W  084a049545951ae3
+ctx-32k  OFF meas prefill 1489 tok/s  sclk 2219 (2049-2341) MHz  84.8 W  084a049545951ae3
+ctx-32k  ON  meas prefill 1589 tok/s  sclk 2222 (2151-2306) MHz  85.0 W  084a049545951ae3
+
+summary (measured runs only, median)
+ctx-8k   ON  runs [1649, 1600, 1641, 1637] median 1639 tok/s  sclk mean [2338, 2250, 2292, 2238]  sha ['36c10ec667f4276a']
+ctx-8k   OFF runs [1541, 1538, 1532, 1534] median 1536 tok/s  sclk mean [2296, 2291, 2233, 2254]  sha ['36c10ec667f4276a']
+ctx-8k   ON/OFF median gain +6.7 %
+ctx-32k  ON  runs [1597, 1578, 1592, 1589] median 1590 tok/s  sclk mean [2243, 2224, 2229, 2222]  sha ['084a049545951ae3']
+ctx-32k  OFF runs [1495, 1493, 1490, 1489] median 1492 tok/s  sclk mean [2230, 2227, 2222, 2219]  sha ['084a049545951ae3']
+ctx-32k  ON/OFF median gain +6.6 %

@@ -1,0 +1,12 @@
+#!/bin/bash
+# tobu – small command front-end:  ./tobu bench [...] | ./tobu serve start|stop|status | ./tobu install [...]
+H=$(cd "$(dirname "$0")" && pwd)
+. "$H/scripts/tobu-env.sh" && tobu_load_env "$H"   # settings from install.sh (.tobu.env)
+PY=${TOBU_PY:-$([ -x "$H/.venv/bin/python" ] && echo "$H/.venv/bin/python" || echo python3)}
+cmd=${1:-help}; shift || true
+case "$cmd" in
+  bench) exec "$PY" -I "$H/bench/tobu_bench.py" "$@" ;;
+  serve) exec "$H/scripts/serve.sh" "$@" ;;
+  install) exec "$H/install.sh" "$@" ;;
+  *) echo "usage: ./tobu bench [--quick] [--help] | ./tobu serve start|stop|status | ./tobu install [--build] [--no-start] [--head-p]"; [ "$cmd" = help ] ;;
+esac

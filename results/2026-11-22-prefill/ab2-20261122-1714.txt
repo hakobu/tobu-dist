@@ -1,0 +1,26 @@
+ctx-8k   ON  warm prefill 1867 tok/s  sclk 2616 (1100-2899) MHz  114.5 W  36c10ec667f4276a
+ctx-8k   ON  meas prefill 1956 tok/s  sclk 2823 (2711-2899) MHz  126.1 W  36c10ec667f4276a
+ctx-8k   OFF meas prefill 1930 tok/s  sclk 2828 (2757-2899) MHz  127.9 W  36c10ec667f4276a
+ctx-8k   OFF meas prefill 1926 tok/s  sclk 2816 (2732-2899) MHz  128.5 W  36c10ec667f4276a
+ctx-8k   ON  meas prefill 1931 tok/s  sclk 2812 (2721-2898) MHz  128.8 W  36c10ec667f4276a
+ctx-8k   ON  meas prefill 1935 tok/s  sclk 2812 (2733-2898) MHz  129.3 W  36c10ec667f4276a
+ctx-8k   OFF meas prefill 1913 tok/s  sclk 2809 (2734-2898) MHz  129.5 W  36c10ec667f4276a
+ctx-8k   OFF meas prefill 1913 tok/s  sclk 2802 (2672-2898) MHz  129.6 W  36c10ec667f4276a
+ctx-8k   ON  meas prefill 1933 tok/s  sclk 2805 (2719-2898) MHz  129.5 W  36c10ec667f4276a
+ctx-32k  ON  warm prefill 1862 tok/s  sclk 2671 (2107-2894) MHz  133.8 W  084a049545951ae3
+ctx-32k  ON  meas prefill 1868 tok/s  sclk 2699 (2625-2898) MHz  136.5 W  084a049545951ae3
+ctx-32k  OFF meas prefill 1842 tok/s  sclk 2697 (2621-2898) MHz  136.2 W  084a049545951ae3
+ctx-32k  OFF meas prefill 1835 tok/s  sclk 2682 (2574-2897) MHz  136.7 W  084a049545951ae3
+ctx-32k  ON  meas prefill 1791 tok/s  sclk 2583 (2495-2896) MHz  121.0 W  084a049545951ae3
+ctx-32k  ON  meas prefill 1793 tok/s  sclk 2585 (2492-2896) MHz  120.3 W  084a049545951ae3
+ctx-32k  OFF meas prefill 1769 tok/s  sclk 2581 (2495-2895) MHz  119.8 W  084a049545951ae3
+ctx-32k  OFF meas prefill 1771 tok/s  sclk 2582 (2499-2896) MHz  118.9 W  084a049545951ae3
+ctx-32k  ON  meas prefill 1798 tok/s  sclk 2592 (2503-2897) MHz  119.7 W  084a049545951ae3
+
+summary (measured runs only, median)
+ctx-8k   ON  runs [1956, 1931, 1935, 1933] median 1934 tok/s  sclk mean [2823, 2812, 2812, 2805]  sha ['36c10ec667f4276a']
+ctx-8k   OFF runs [1930, 1926, 1913, 1913] median 1920 tok/s  sclk mean [2828, 2816, 2809, 2802]  sha ['36c10ec667f4276a']
+ctx-8k   ON/OFF median gain +0.8 %
+ctx-32k  ON  runs [1868, 1791, 1793, 1798] median 1796 tok/s  sclk mean [2699, 2583, 2585, 2592]  sha ['084a049545951ae3']
+ctx-32k  OFF runs [1842, 1835, 1769, 1771] median 1803 tok/s  sclk mean [2697, 2682, 2581, 2582]  sha ['084a049545951ae3']
+ctx-32k  ON/OFF median gain -0.4 %

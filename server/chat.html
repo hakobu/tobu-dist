@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tobu chat</title>
+<style>
+:root { --bg:#f6f5f2; --panel:#ffffff; --fg:#1d1c1a; --muted:#77736b; --line:#e2dfd8; --accent:#2f6f5e; --user:#e9f1ee;
+        --think:#f1efe9; --err:#c0392b; --warn:#b9770e; color-scheme:light; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#151514; --panel:#1e1e1c; --fg:#ecebe7; --muted:#9a968d; --line:#33322f; --accent:#6fbfa6; --user:#1f2c28;
+          --think:#252422; --err:#f2a39a; --warn:#e0b25c; color-scheme:dark; }
+}
+* { box-sizing:border-box; }
+[hidden] { display:none !important; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+       display:flex; flex-direction:column; height:100vh; }
+header { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid var(--line);
+         background:var(--panel); flex-wrap:wrap; }
+header b { font-size:16px; letter-spacing:.02em; }
+header .sub { color:var(--muted); font-size:13px; }
+header .sp { flex:1; }
+header label { color:var(--muted); font-size:13px; display:flex; align-items:center; gap:6px; }
+select, button { font:inherit; font-size:13px; padding:4px 10px; border:1px solid var(--line); border-radius:6px;
+                 background:var(--panel); color:var(--fg); cursor:pointer; }
+select:disabled { opacity:.6; cursor:default; }
+.ctx { font-size:12px; color:var(--muted); text-align:center; padding:4px 16px; border-bottom:1px solid var(--line);
+       background:var(--panel); font-variant-numeric:tabular-nums; }
+#log { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; max-width:1200px; width:100%;
+       margin:0 auto; }
+.msg { padding:10px 14px; border-radius:10px; background:var(--panel); border:1px solid var(--line); white-space:pre-wrap;
+       word-wrap:break-word; min-width:0; }
+.msg.user { background:var(--user); align-self:flex-end; max-width:85%; max-height:30vh; overflow-y:auto; }
+.msg .body { max-height:55vh; overflow-y:auto; overscroll-behavior:contain; }
+.eng { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--accent); margin-bottom:6px;
+       white-space:normal; }
+details.think { background:var(--think); border-radius:8px; padding:6px 10px; margin-bottom:8px; color:var(--muted);
+                font-size:13px; white-space:normal; }
+details.think summary { cursor:pointer; user-select:none; }
+details.think div { white-space:pre-wrap; margin-top:6px; }
+.stats { margin-top:8px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:normal;
+         display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.stats button { padding:1px 8px; font-size:12px; }
+.err { color:var(--err); white-space:pre-wrap; }
+.single { display:flex; flex-direction:column; }
+.pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; }
+.pair > .msg { font-size:13px; }
+@media (max-width:700px) { .pair { grid-template-columns:1fr; } }
+.cmp { align-self:center; font-size:14px; padding:6px 14px; border-radius:20px; background:var(--panel);
+       border:1px solid var(--line); font-variant-numeric:tabular-nums; }
+.cmp .ok { color:var(--accent); font-weight:600; }
+.cmp .warn { color:var(--warn); font-weight:600; }
+.ctx .warn { color:var(--warn); font-weight:600; }
+#examples { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-top:auto; }
+#examples .head { grid-column:1/-1; font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase;
+               letter-spacing:.06em; margin:0; }
+.ex { text-align:left; padding:12px 14px; border-radius:10px; font-size:14px; line-height:1.4; }
+.ex:hover { border-color:var(--accent); }
+.ex b { display:block; margin-bottom:4px; }
+.ex span { color:var(--muted); font-size:12px; }
+form { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--line); background:var(--panel); max-width:860px;
+       width:100%; margin:0 auto; }
+textarea { flex:1; resize:none; font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:8px;
+           background:var(--bg); color:var(--fg); min-height:44px; max-height:200px; }
+#send { background:var(--accent); color:#fff; border:none; padding:0 18px; min-height:44px; }
+#in[hidden] + #send { flex:1; }
+</style>
+</head>
+<body>
+<header>
+  <b>tobu</b><span class="sub">local · nothing leaves this machine</span>
+  <span class="sp"></span>
+  <label>Engine <select id="engine">
+    <option value="tobu" selected>tobu</option>
+  </select></label>
+  <label>Thinking <select id="think">
+    <option value="xhigh" selected>xhigh</option>
+    <option value="medium">medium</option>
+    <option value="low">low</option>
+    <option value="off">off</option>
+  </select></label>
+  <label>Max tokens <select id="maxtok"><option>1024</option><option selected>4096</option><option>8192</option>
+    <option>16384</option></select></label>
+  <button id="new" type="button">New chat</button>
+</header>
+<div id="ctx" class="ctx">Context 0 tokens</div>
+<div id="log"></div>
+<form id="f">
+  <textarea id="in" placeholder="Message … (Enter to send, Shift+Enter for a new line)"></textarea>
+  <button id="send" type="submit">Send</button>
+</form>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const log = $("log"), inp = $("in"), sendBtn = $("send");
+// with --token the server authenticates the page's requests by the HttpOnly session cookie (same origin only)
+const HDR = { "Content-Type": "application/json" };
+const ENGINES = { tobu: { base: "", ready: "tobu", name: "tobu" } };
+let ctrl = null, lastCtx = 0, info = null;
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+// follow new output only while the viewer is at the bottom; scrolling up stops it, scrolling back down resumes it
+let stick = true;
+log.addEventListener("scroll", () => { stick = log.scrollTop + log.clientHeight >= log.scrollHeight - 40; });
+function scroll() { if (stick) log.scrollTop = log.scrollHeight; }
+const n0 = x => Math.round(x).toLocaleString("en-US");
+
+const DEMO_CODE = `import csv
+from dataclasses import dataclass
+from datetime import date
+
+
+@dataclass
+class Item:
+    sku: str
+    name: str
+    qty: int
+    price: float
+    reorder_at: int
+
+
+def load(path):
+    items = []
+    with open(path, newline="") as f:
+        for row in csv.DictReader(f):
+            items.append(Item(row["sku"], row["name"], int(row["qty"]),
+                              float(row["price"]), int(row["reorder_at"])))
+    return items
+
+
+def save(path, items):
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["sku", "name", "qty", "price", "reorder_at"])
+        for it in items:
+            w.writerow([it.sku, it.name, it.qty, f"{it.price:.2f}", it.reorder_at])
+
+
+def find(items, sku):
+    for it in items:
+        if it.sku == sku:
+            return it
+    return None
+
+
+def receive(items, sku, n):
+    it = find(items, sku)
+    if it is None:
+        raise KeyError(sku)
+    it.qty += n
+    return it.qty
+
+
+def ship(items, sku, n):
+    it = find(items, sku)
+    if it is None:
+        raise KeyError(sku)
+    if n > it.qty:
+        raise ValueError(f"only {it.qty} of {sku} in stock")
+    it.qty -= n
+    return it.qty
+
+
+def low_stock(items):
+    return [it for it in items if it.qty <= it.reorder_at]
+
+
+def stock_value(items):
+    total = 0.0
+    for it in items:
+        total += it.qty * it.price
+    return round(total, 2)
+
+
+def report(items):
+    lines = [f"Inventory report {date.today().isoformat()}"]
+    lines.append(f"{'SKU':<8}{'Name':<24}{'Qty':>6}{'Value':>12}")
+    for it in sorted(items, key=lambda x: x.sku):
+        lines.append(f"{it.sku:<8}{it.name:<24}{it.qty:>6}{it.qty * it.price:>12.2f}")
+    lines.append(f"Total value: {stock_value(items):.2f}")
+    low = low_stock(items)
+    if low:
+        lines.append("Reorder: " + ", ".join(it.sku for it in low))
+    return "\\n".join(lines)
+
+
+if __name__ == "__main__":
+    import sys
+    data = load(sys.argv[1])
+    print(report(data))
+`;
+const EXAMPLES = [
+  { title: "Refactor a file", note: "Rewrite task · thinking off · fastest", think: "off",
+    text: "Rename the class Item to StockItem everywhere and add a one-line docstring to every function. " +
+          "Return the complete file, nothing else.\n\n```python\n" + DEMO_CODE + "```" },
+  { title: "Add type hints", note: "Rewrite task · thinking off", think: "off",
+    text: "Add full type hints to every function in this module (use list[Item] style). Do not change anything else. " +
+          "Return the complete file.\n\n```python\n" + DEMO_CODE + "```" },
+  { title: "Fix and explain", note: "Code task · thinking low", think: "low",
+    text: "receive() accepts negative amounts. Make receive() and ship() reject n <= 0 with a ValueError. " +
+          "Return the complete file, then one sentence on what changed.\n\n```python\n" + DEMO_CODE + "```" },
+  { title: "Free question", note: "Open text · thinking xhigh · for comparison", think: "xhigh",
+    text: "In five short bullet points: what should a small team check before running a language model locally " +
+          "instead of in the cloud?" },
+];
+
+function showExamples() {
+  const box = el("div"); box.id = "examples";
+  box.appendChild(el("div", "head", "Try an example"));
+  for (const ex of EXAMPLES) {
+    const b = el("button", "ex"); b.type = "button";
+    b.append(el("b", null, ex.title), el("span", null, ex.note));
+    b.onclick = () => { $("think").value = ex.think; inp.value = ex.text; $("f").requestSubmit(); };
+    box.appendChild(b);
+  }
+  log.appendChild(box);
+}
+
+async function errText(r) {           // server error as text: JSON error.message, else the plain body
+  const t = await r.text().catch(() => "");
+  try { const j = JSON.parse(t); if (j.error && j.error.message) return j.error.message; } catch {}
+  return t.trim() || "HTTP " + r.status;
+}
+async function refreshInfo() {
+  try {
+    const r = await fetch("/chat/info", { headers: HDR, credentials: "same-origin" });
+    info = r.ok ? await r.json() : null;
+  } catch { info = null; }
+  showCtx();
+}
+function showCtx() {
+  let t = "Context " + n0(lastCtx) + " tokens";
+  if (info && info.tokens_fit != null) {
+    const more = Math.max(0, info.tokens_fit - lastCtx);       // tokens_fit = room in total, minus what is in use
+    const k = more >= 10000 ? Math.round(more / 1000) + "k" : n0(more);
+    t += " · ≈" + k + " more fit in GPU memory";
+    const parts = [];
+    if (info.bytes_per_token) parts.push(Math.round(info.bytes_per_token / 1024) + " KB per token");
+    if (info.gpu_limit_bytes) parts.push("GPU limit ≈ " + (info.gpu_limit_bytes / 2 ** 30).toFixed(1) + " GB");
+    if (info.engines_bytes) parts.push("in use " + (info.engines_bytes / 2 ** 30).toFixed(1) + " GB");
+    if (info.model_max_context) parts.push("model maximum " + n0(info.model_max_context) + " tokens");
+    $("ctx").title = parts.join("; ");
+  }
+  $("ctx").textContent = t;
+  // pressure level 1 = normal, 2 = warn, 4 = critical; swap size alone stays high long after the pressure is gone
+  if (info && info.memory_pressure >= 2)
+    $("ctx").append(el("span", "warn", " · memory pressure high, system is swapping: timings unreliable (close apps)"));
+}
+
+// one question per chat: after sending, the input gives way to Stop, then to New chat
+function newChat() {
+  if (ctrl) ctrl.abort();
+  log.innerHTML = ""; lastCtx = 0; showCtx(); showExamples();
+  inp.hidden = false; sendBtn.textContent = "Send"; sendBtn.dataset.mode = "";
+  for (const id of ["engine", "think", "maxtok"]) $(id).disabled = false;
+  inp.focus();
+}
+$("new").onclick = newChat;
+inp.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("f").requestSubmit(); }
+});
+
+async function runEngine(engine, messages, level, maxTok, box) {
+  const det = el("details", "think"), sum = el("summary", null, "Thinking …"), thinkDiv = el("div");
+  det.append(sum, thinkDiv);
+  const answer = el("div"), stats = el("div", "stats"), pane = el("div", "body");
+  if (level !== "off") pane.appendChild(det);
+  pane.appendChild(answer); box.append(pane, stats); scroll();
+  let follow = true;
+  pane.addEventListener("scroll", () => { follow = pane.scrollTop + pane.clientHeight >= pane.scrollHeight - 30; });
+  const fail = msg => { answer.appendChild(el("div", "err", msg)); return msg; };
+  const body = { model: "tobu", stream: true, temperature: 0, max_tokens: maxTok, messages,
+                 stream_options: { include_usage: true },
+                 chat_template_kwargs: level === "off" ? { enable_thinking: false }
+                                                       : { enable_thinking: true, reasoning_effort: level } };
+  // wait until the engine is started and warmed up; the clock starts after that (an older server without this
+  // step answers 404: then start right away)
+  stats.textContent = "Warming up …";
+  try {
+    const rr = await fetch("/chat/ready/" + ENGINES[engine].ready, { headers: HDR, credentials: "same-origin", signal: ctrl.signal });
+    if (!rr.ok && rr.status !== 404) throw new Error(await errText(rr));
+  } catch (err) {
+    stats.textContent = "";
+    if (err.name === "AbortError") { stats.textContent = "stopped"; return { out: "", think: "", n: 0, aborted: true }; }
+    return { out: "", think: "", n: 0, error: fail(String(err.message || err)) };
+  }
+  const t0 = performance.now();
+  let tFirst = null, nChunks = 0, usage = null, timings = null, think = "", out = "", buf = "";
+  let inThink = false, aborted = false, error = null;
+  const promptEst = Math.round(messages.reduce((n, m) => n + m.content.length, 0) / 3.6);
+  const waitTick = () => {
+    if (tFirst === null) stats.textContent = "Reading prompt (~" + n0(promptEst) + " tokens) … " +
+                                             ((performance.now() - t0) / 1000).toFixed(1) + " s";
+  };
+  waitTick();
+  const waitTimer = setInterval(waitTick, 100);
+  function addContent(s) {            // in case the thinking arrives inline as <think>…</think>
+    while (s.length) {
+      if (inThink) {
+        const i = s.indexOf("</think>");
+        if (i < 0) { think += s; s = ""; } else { think += s.slice(0, i); s = s.slice(i + 8); inThink = false; }
+      } else {
+        const i = s.indexOf("<think>");
+        if (i < 0) { out += s; s = ""; } else { out += s.slice(0, i); s = s.slice(i + 7); inThink = true; }
+      }
+    }
+  }
+  try {
+    const r = await fetch(ENGINES[engine].base + "/v1/chat/completions",
+                          { method: "POST", headers: HDR, credentials: "same-origin", body: JSON.stringify(body), signal: ctrl.signal });
+    if (!r.ok) throw new Error(await errText(r));
+    const rd = r.body.getReader(), dec = new TextDecoder();
+    for (;;) {
+      const { done, value } = await rd.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let k;
+      while ((k = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, k).trim(); buf = buf.slice(k + 1);
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (data === "[DONE]") continue;
+        let j; try { j = JSON.parse(data); } catch { continue; }
+        if (j.error) throw new Error(j.error.message || "error");
+        if (j.usage) usage = j.usage;
+        if (j.timings) timings = j.timings;
+        const d = j.choices && j.choices[0] && j.choices[0].delta;
+        if (!d) continue;
+        if (d.reasoning_content || d.content) { if (tFirst === null) tFirst = performance.now(); nChunks++; }
+        if (d.reasoning_content) think += d.reasoning_content;
+        if (d.content) addContent(d.content);
+      }
+      thinkDiv.textContent = think; answer.textContent = out;
+      if (think && !out) sum.textContent = "Thinking … (" + n0(think.length) + " chars)";
+      // several tokens can arrive per chunk: estimate from the text while streaming, exact numbers come at the end
+      const est = Math.max(nChunks, Math.round((think.length + out.length) / 3.6));
+      const sec = (performance.now() - (tFirst || t0)) / 1000;
+      if (tFirst !== null) stats.textContent = "~" + n0(est) + " tokens · ~" + (sec > 0 ? (est / sec).toFixed(1) : "–") +
+                                               " tok/s · first token " + ((tFirst - t0) / 1000).toFixed(2) + " s";
+      if (follow) pane.scrollTop = pane.scrollHeight;
+      scroll();
+    }
+    sum.textContent = think ? "Thinking (" + n0(think.length) + " chars)" : "No thinking";
+  } catch (err) {
+    if (err.name === "AbortError") aborted = true;
+    else error = fail(String(err.message || err));
+  }
+  clearInterval(waitTimer);
+  const tEnd = performance.now();
+  const n = (timings && timings.predicted_n) || (usage && usage.completion_tokens) || nChunks;
+  // tok/s while generating (after the first token) and the total time (send → done), both measured here the same
+  // way for every engine; the side-by-side verdict uses the total time, so an engine that sends its first tokens
+  // in a burst can't look better than it is
+  const total = (tEnd - t0) / 1000, ttft = tFirst ? (tFirst - t0) / 1000 : null;
+  const gen = (tEnd - (tFirst || t0)) / 1000, tps = gen > 0 ? n / gen : 0;
+  stats.textContent = "";
+  if (n) {
+    stats.append(el("span", null, n0(n) + " tokens · " + (tps ? tps.toFixed(1) : "–") + " tok/s · " +
+                    total.toFixed(1) + " s total" +
+                    (ttft !== null ? " · first token " + ttft.toFixed(2) + " s" : "") +
+                    (usage && usage.prompt_tokens ? " · prompt " + n0(usage.prompt_tokens) + " tokens" : "") +
+                    (aborted ? " · stopped" : "")));
+    const cp = el("button", null, "Copy"); cp.type = "button";
+    cp.onclick = async () => {
+      try { await navigator.clipboard.writeText(out); cp.textContent = "Copied"; }
+      catch { cp.textContent = "Copy failed"; }
+      setTimeout(() => { cp.textContent = "Copy"; }, 1500);
+    };
+    stats.append(cp);
+  } else if (aborted) {
+    stats.textContent = "stopped";
+  }
+  scroll();
+  return { out, think, n, tps, total, ttft,
+           promptTok: (usage && usage.prompt_tokens) || promptEst, aborted, error };
+}
+
+$("f").onsubmit = async e => {
+  e.preventDefault();
+  if (ctrl) { ctrl.abort(); return; }
+  if (sendBtn.dataset.mode === "new") { newChat(); return; }
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = "";
+  const exBox = $("examples");
+  if (exBox) exBox.remove();
+  stick = true;
+  log.appendChild(el("div", "msg user", text));
+
+  const mode = $("engine").value, level = $("think").value, maxTok = +$("maxtok").value;
+  for (const id of ["engine", "think", "maxtok"]) $(id).disabled = true;
+  const engines = [mode];
+  const row = el("div", engines.length > 1 ? "pair" : "single");
+  log.appendChild(row);
+  const boxes = engines.map(en => {
+    const b = el("div", "msg"); b.appendChild(el("div", "eng", ENGINES[en].name)); row.appendChild(b); return b;
+  });
+  scroll();
+
+  ctrl = new AbortController(); inp.hidden = true; sendBtn.textContent = "Stop";
+  const msgs = [{ role: "user", content: text }], res = [];
+  for (let i = 0; i < engines.length; i++) {
+    const r = await runEngine(engines[i], msgs, level, maxTok, boxes[i]);
+    res.push(r);
+    if (r.aborted || r.error) break;
+  }
+  const main = res[0];
+  if (main && main.n) { lastCtx = main.promptTok + main.n; showCtx(); }
+  ctrl = null; sendBtn.textContent = "New chat"; sendBtn.dataset.mode = "new"; sendBtn.focus(); scroll();
+  refreshInfo();
+};
+
+refreshInfo();
+showExamples();
+inp.focus();
+</script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+{
+ "title": "Qwen3.8-Flash-Next (UD-IQ4_XS) on AMD Ryzen AI Max+ 395 (gfx1151, 128 GB, 85 W) – tok/s, batch 1",
+ "date": "2026-11-22",
+ "source": "raw data in this folder (*-20261122.jsonl); bench kit = bench/run_openai.py with bench/prompts",
+ "method": "bench kit run_openai.py through each server on the measurement machine, same GGUF, 7 prompts x 2 runs, greedy (temperature 0, seed 0), thinking off, cache_prompt false, streaming. Decode = first run per prompt (tobu's answer memory and halogen's prompt cache hit on the repeat). Sampled: temperature 1.0, top_p 0.95, top_k 20, min_p 0.05, no seed, 5 short prompts x 2.",
+ "engines": [
+  "llama.cpp",
+  "gufo",
+  "halogen",
+  "tobu"
+ ],
+ "engine_versions": {
+  "tobu": "server eca6834 (production profile: 4 slots, 196k context, fine-tuned MTP head, arm C), engine before the prefill kernels of 22.11. (prefill with the new kernels: ../2026-11-22-prefill)",
+  "llama.cpp": "8af68d4 Vulkan, -fa on, -np 1 (decode 22.11.; prefill 19.11. with -ub 2048, today's default ubatch: 416 / 365)",
+  "gufo": "0.34.0 2845939b + flash_next_iq 9ce08ce with MTP (19.11.2026, same machine)",
+  "halogen": "0.20.7 (pinned digest), MTP head (22.11.; 36k prefill from 19.11.: today's run shared the 8.7k prefix in halogen's cache)"
+ },
+ "measured_on": {
+  "tobu": "2026-11-22",
+  "llama.cpp": "2026-11-22 (prefill 2026-11-19)",
+  "gufo": "2026-11-19",
+  "halogen": "2026-11-22 (36k prefill 2026-11-19)"
+ },
+ "prefill": [
+  {
+   "task": "prefill 8.7k",
+   "llama.cpp": 562,
+   "gufo": 1363,
+   "halogen": 1599,
+   "tobu": 1522
+  },
+  {
+   "task": "prefill 36k",
+   "llama.cpp": 480,
+   "gufo": 1401,
+   "halogen": 1685,
+   "tobu": 1495
+  }
+ ],
+ "decode": [
+  {
+   "task": "code (en)",
+   "llama.cpp": 28.5,
+   "gufo": 73.1,
+   "halogen": 67.5,
+   "tobu": 75.9
+  },
+  {
+   "task": "code refactor",
+   "llama.cpp": 28.5,
+   "gufo": 80.7,
+   "halogen": 76.4,
+   "tobu": 83.4
+  },
+  {
+   "task": "JSON extract",
+   "llama.cpp": 28.5,
+   "gufo": 83.5,
+   "halogen": 79.8,
+   "tobu": 80.0
+  },
+  {
+   "task": "German prose",
+   "llama.cpp": 28.3,
+   "gufo": 35.5,
+   "halogen": 39.0,
+   "tobu": 43.1
+  },
+  {
+   "task": "8k context",
+   "llama.cpp": 26.8,
+   "gufo": 44.1,
+   "halogen": 42.3,
+   "tobu": 46.7
+  },
+  {
+   "task": "32k context",
+   "llama.cpp": 25.1,
+   "gufo": 46.8,
+   "halogen": 43.3,
+   "tobu": 47.2
+  }
+ ],
+ "sampled_T1": [
+  {
+   "task": "short German",
+   "llama.cpp": 27.6,
+   "halogen": 40.5,
+   "tobu": 42.5
+  },
+  {
+   "task": "code (en)",
+   "llama.cpp": 27.6,
+   "halogen": 68.5,
+   "tobu": 73.2
+  },
+  {
+   "task": "code refactor",
+   "llama.cpp": 27.1,
+   "halogen": 71.8,
+   "tobu": 72.7
+  },
+  {
+   "task": "JSON extract",
+   "llama.cpp": 27.4,
+   "halogen": 76.6,
+   "tobu": 68.9
+  },
+  {
+   "task": "German prose",
+   "llama.cpp": 27.3,
+   "halogen": 37.4,
+   "tobu": 36.8
+  }
+ ],
+ "determinism": {
+  "llama.cpp": "3/7 same output on repeat (greedy)",
+  "halogen": "7/7",
+  "tobu": "7/7 (MTP = plain)"
+ },
+ "prefix_cache_ttft_s": {
+  "cold 8.7k": 5.7,
+  "cold 36k": 24.2,
+  "hit": 0.7
+ }
+}
